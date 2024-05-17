@@ -11,7 +11,6 @@ function App() {
       <div>
         <Input />
         <Cards />
-        <>Mera nam mahad hai</>
       </div>
     </>
   );
