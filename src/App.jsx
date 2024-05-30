@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import OpenAI from "openai";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
@@ -10,10 +11,8 @@ function App() {
     <>
       <div>
         <Input />
-        <Cards />
       </div>
     </>
   );
 }
-
 export default App;

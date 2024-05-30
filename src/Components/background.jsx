@@ -1,16 +1,38 @@
 import React, { useState } from "react";
+import OpenAI from "openai";
 import { UilSearch } from "@iconscout/react-unicons";
+import Cards from "./Cards";
+let object = [];
 const Input = () => {
-  const [entry, setEntry] = useState("");
   const [arr, setArr] = useState([]);
-  function inputData() {
-    console.log(entry);
-    setArr([...arr, entry]);
+  const [entry, setEntry] = useState("");
+  const [loader, setLoader] = useState(false);
+  // TODO: store the user search history in local storage
+  async function inputData() {
+    setLoader(true);
+    let name = entry;
     setEntry("");
+    const openai = new OpenAI({
+      apiKey: import.meta.env.VITE_API_KEY, // This is the default and can be omitted
+      dangerouslyAllowBrowser: true,
+    });
+
+    const completion = await openai.completions.create({
+      model: "gpt-3.5-turbo-instruct",
+      prompt: `Recommend me movies in json format {"title": "", "description": ""} according to this input from user ${name}. Description must be 3 to 4 lines`,
+      max_tokens: 1000,
+      temperature: 0.5,
+    });
+    console.log("before", completion.choices[0].text);
+    let obj = completion.choices[0].text;
+    object = JSON.parse(obj);
+    console.log("object is: ", object.length);
+    if (object.length > 3) {
+      object = object.splice(0, 3);
+    }
+    setArr(object);
+    setLoader(false);
   }
-  let prompt = `I have a website for movie recommendations. User will prompt some input and at the basis of that input you will suggest movies. user's input is ${
-    arr[arr.length - 1]
-  }`;
   const head = "Your Gateway to Movie Bliss";
   return (
     <>
@@ -37,13 +59,13 @@ const Input = () => {
           >
             <UilSearch
               size={25}
-              className="flex text-black cursor-pointer hover:scale-125 hover:transition ease-in-out"
+              className="flex text-black cursor-pointer hover:scale-125 hover:transition ease-in-out duration-200"
             />
           </button>
         </div>
+        <Cards arr={arr} loader={loader} />
       </div>
     </>
   );
 };
-
 export default Input;
