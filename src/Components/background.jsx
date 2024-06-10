@@ -23,7 +23,7 @@ const Input = () => {
       max_tokens: 1000,
       temperature: 0.5,
     });
-    console.log("before", completion.choices[0].text);
+    console.log("before", completion);
     let obj = completion.choices[0].text;
     object = JSON.parse(obj);
     console.log("object is: ", object.length);
