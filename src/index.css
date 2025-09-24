@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10vh) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.floating-icon {
+  @apply absolute bottom-0 opacity-70;
+  animation: float 15s linear infinite;
+}
+
+.floating-icon.delay-1000 { animation-delay: 1s; }
+.floating-icon.delay-1500 { animation-delay: 1.5s; }
+.floating-icon.delay-2000 { animation-delay: 2s; }
+.floating-icon.delay-3000 { animation-delay: 3s; }
