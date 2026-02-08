@@ -1,58 +1,87 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import { UilFilm } from "@iconscout/react-unicons";
+import "./background.css";
+
 const Cards = ({ arr, loader }) => {
+  const [failedPosters, setFailedPosters] = useState({});
   if (loader) {
     return (
-      <div className="flex  my-10">
-        {Array.from({ length: 3 }).map((_, index) => (
+      <div className="flex flex-wrap justify-center gap-8 my-10 px-2">
+        {[0, 1, 2, 3, 4].map((index) => (
           <div
             key={index}
-            className="flex justify-center items-center bg-gray-900 w-96 h-80 rounded-md mx-12 shadow-2xl hover:-translate-y-10 transition transform 0.1s ease-in-out duration-300"
+            className="w-[320px] rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-sm opacity-80"
           >
-            <div className="bg-gray-600 w-80 h-72 rounded-md flex flex-col justify-center items-center text-white text-pretty">
-              <Skeleton
-                height={24}
-                width={125}
-                className="my-4"
-                baseColor="#2d3748"
-                highlightColor="#101319"
-              />
-              <Skeleton
-                count={3}
-                width={275}
-                className="my-2"
-                baseColor="#3b3b3b"
-                highlightColor="#222222"
-              />
+            <Skeleton
+              height={420}
+              className="rounded-none"
+              baseColor="#1e293b"
+              highlightColor="#334155"
+            />
+            <div className="p-5">
+              <Skeleton height={26} width="70%" className="mb-3" baseColor="#1e293b" highlightColor="#334155" />
+              <Skeleton count={3} height={14} className="mb-1" baseColor="#1e293b" highlightColor="#334155" />
             </div>
           </div>
         ))}
       </div>
     );
   }
-  if (!Array.isArray(arr) || arr.length === 0)
-    return <div>No cards Available</div>;
+
+  if (!Array.isArray(arr) || arr.length === 0) {
+    return (
+      <div className="text-center py-16 px-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 border border-white/10 mb-4">
+          <UilFilm size={32} className="text-slate-500" />
+        </div>
+        <p className="text-slate-400 text-lg">No recommendations yet</p>
+        <p className="text-slate-500 text-sm mt-1">Search for a mood or genre above</p>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className="flex  my-10">
-        {arr.map((value, index) => (
-          <div
-            key={index}
-            className="flex space-evenly bg-gray-900 w-96 h-80 rounded-md mx-12 shadow-2xl hover:-translate-y-10 transition transform 0.1s ease-in-out duration-300"
-          >
-            <div className="  bg-gray-600 w-80 h-72 rounded-md mx-auto my-auto text-white text-pretty">
-              <h1 className=" font-bold justify-center items-center mx-auto px-4 my-2">
+    <div className="flex flex-wrap justify-center gap-8 my-10 px-2">
+      {arr.map((value, index) => (
+        <article
+          key={index}
+          className="card-reveal movie-card w-[320px] rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-sm"
+        >
+          <div className="relative">
+            {value.poster && !failedPosters[index] ? (
+              <div className="poster-wrap relative h-[420px]">
+                <img
+                  src={value.poster}
+                  alt={value.title}
+                  className="w-full h-full object-cover"
+                  onError={() => setFailedPosters((prev) => ({ ...prev, [index]: true }))}
+                />
+                <div className="poster-overlay absolute inset-0 pointer-events-none" />
+              </div>
+            ) : (
+              <div className="h-[420px] flex items-center justify-center bg-gradient-to-b from-slate-800/60 to-slate-900/80 border-b border-white/5">
+                <div className="text-center px-4">
+                  <UilFilm size={48} className="text-slate-600 mx-auto mb-2" />
+                  <span className="text-slate-500 text-sm">No poster available</span>
+                </div>
+              </div>
+            )}
+            <div className="absolute bottom-0 left-0 right-0 p-5 pt-16">
+              <h2 className="font-semibold text-lg text-white tracking-tight leading-tight">
                 {value.title}
-              </h1>
-              <p className="text-center my-6 px-4 font-normal">
-                {value.description}
-              </p>
+              </h2>
             </div>
           </div>
-        ))}
-      </div>
-    </>
+          <div className="p-5 pt-2">
+            <p className="text-slate-400 text-sm leading-relaxed">
+              {value.description}
+            </p>
+          </div>
+        </article>
+      ))}
+    </div>
   );
 };
 export default Cards;
