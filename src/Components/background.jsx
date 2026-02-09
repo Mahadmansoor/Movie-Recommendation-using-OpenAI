@@ -38,12 +38,12 @@ const Input = () => {
       const query = cleanMovieTitle(movieTitle) || movieTitle;
       // OMDB API - free tier allows production use
       const searchUrl = `https://www.omdbapi.com/?apikey=${omdbApiKey}&t=${encodeURIComponent(query)}&plot=short`;
-      
+
       const response = await fetch(searchUrl);
       if (!response.ok) {
         throw new Error(`OMDB API error: ${response.status}`);
       }
-      
+
       const data = await response.json();
 
       // OMDB returns "N/A" for missing posters
@@ -67,7 +67,7 @@ const Input = () => {
     if (!apiKey) {
       setLoader(false);
       setError(
-        "API key is missing. If you deployed on Vercel, add VITE_API_KEY in Project Settings → Environment Variables, then redeploy."
+        "API key is missing. If you deployed on Vercel, add VITE_API_KEY in Project Settings → Environment Variables, then redeploy.",
       );
       return;
     }
@@ -99,13 +99,15 @@ const Input = () => {
         object.map(async (movie) => {
           const posterUrl = await fetchMoviePoster(movie.title);
           return { ...movie, poster: posterUrl };
-        })
+        }),
       );
 
       setArr(moviesWithPosters);
     } catch (err) {
       console.error("Recommendation error:", err);
-      setError(err?.message || "Something went wrong. Check the console for details.");
+      setError(
+        err?.message || "Something went wrong. Check the console for details.",
+      );
     } finally {
       setLoader(false);
     }
@@ -116,7 +118,10 @@ const Input = () => {
       {/* Gradient orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-1/2 -right-1/2 w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute -bottom-1/2 -left-1/2 w-[500px] h-[500px] bg-violet-500/15 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: "1s" }} />
+        <div
+          className="absolute -bottom-1/2 -left-1/2 w-[500px] h-[500px] bg-violet-500/15 rounded-full blur-[100px] animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
         <div className="absolute top-1/3 left-1/2 w-72 h-72 bg-fuchsia-500/10 rounded-full blur-3xl" />
 
         <div className="floating-icon left-[18%] delay-1000">
@@ -184,16 +189,18 @@ const Input = () => {
           )}
           <p className="mt-3 text-center text-slate-500 text-sm">or try</p>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
-            {["Action", "Rom-com", "Sci‑fi", "Horror", "Documentary"].map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => setEntry(suggestion)}
-                className="pill-hover px-4 py-2 rounded-full text-sm text-slate-400 bg-white/5 border border-white/10 hover:text-white hover:border-indigo-500/40"
-              >
-                {suggestion}
-              </button>
-            ))}
+            {["Action", "Rom-com", "Sci‑fi", "Horror", "Documentary"].map(
+              (suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => setEntry(suggestion)}
+                  className="pill-hover px-4 py-2 rounded-full text-sm text-slate-400 bg-white/5 border border-white/10 hover:text-white hover:border-indigo-500/40"
+                >
+                  {suggestion}
+                </button>
+              ),
+            )}
           </div>
         </div>
       </div>
