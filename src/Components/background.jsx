@@ -15,6 +15,7 @@ const Input = () => {
   const [arr, setArr] = useState([]);
   const [entry, setEntry] = useState("");
   const [loader, setLoader] = useState(false);
+  const [error, setError] = useState(null);
 
   // Clean movie title for better TMDB search (remove year, extra text)
   function cleanMovieTitle(title) {
@@ -25,29 +26,29 @@ const Input = () => {
       .trim();
   }
 
-  // Function to fetch movie poster from TMDB (via CORS proxy - TMDB blocks direct browser requests)
+  // Function to fetch movie poster from OMDB API (free, allows production use)
   async function fetchMoviePoster(movieTitle) {
     try {
-      const tmdbApiKey = import.meta.env.VITE_TMDB_API_KEY;
-      if (!tmdbApiKey) {
-        console.warn("TMDB API key not found. Add VITE_TMDB_API_KEY to .env");
+      const omdbApiKey = import.meta.env.VITE_OMDB_API_KEY;
+      if (!omdbApiKey) {
+        console.warn("OMDB API key not found. Add VITE_OMDB_API_KEY to .env");
         return null;
       }
 
       const query = cleanMovieTitle(movieTitle) || movieTitle;
-      const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(query)}`;
-      // Use CORS proxy so the request works from the browser (TMDB does not allow direct CORS)
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(searchUrl)}`;
-      const response = await fetch(proxyUrl);
+      // OMDB API - free tier allows production use
+      const searchUrl = `https://www.omdbapi.com/?apikey=${omdbApiKey}&t=${encodeURIComponent(query)}&plot=short`;
+      
+      const response = await fetch(searchUrl);
+      if (!response.ok) {
+        throw new Error(`OMDB API error: ${response.status}`);
+      }
+      
       const data = await response.json();
 
-      if (data.results && data.results.length > 0) {
-        // Use first result that has a poster
-        const withPoster = data.results.find((r) => r.poster_path);
-        const posterPath = withPoster?.poster_path ?? data.results[0].poster_path;
-        if (posterPath) {
-          return `https://image.tmdb.org/t/p/w500${posterPath}`;
-        }
+      // OMDB returns "N/A" for missing posters
+      if (data.Poster && data.Poster !== "N/A") {
+        return data.Poster;
       }
       return null;
     } catch (error) {
@@ -57,42 +58,57 @@ const Input = () => {
   }
 
   async function inputData() {
+    setError(null);
     setLoader(true);
-    let name = entry;
+    const name = entry.trim();
     setEntry("");
-    const openai = new OpenAI({
-      apiKey: import.meta.env.VITE_API_KEY,
-      dangerouslyAllowBrowser: true,
-    });
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "user",
-          content: `Recommend me movies in json format [{"title": "", "description": ""}] according to this input from user: ${name}. Return only a valid JSON array. Description must be 3 to 4 lines.`,
-        },
-      ],
-      max_tokens: 1000,
-      temperature: 0.5,
-    });
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
+      setLoader(false);
+      setError(
+        "API key is missing. If you deployed on Vercel, add VITE_API_KEY in Project Settings → Environment Variables, then redeploy."
+      );
+      return;
+    }
 
-    let obj = completion.choices[0].message.content?.trim() ?? "";
-    // Strip markdown code block if present
-    const jsonMatch = obj.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) obj = jsonMatch[1].trim();
-    object = JSON.parse(obj);
+    try {
+      const openai = new OpenAI({
+        apiKey,
+        dangerouslyAllowBrowser: true,
+      });
 
-    // Fetch posters for each movie
-    const moviesWithPosters = await Promise.all(
-      object.map(async (movie) => {
-        const posterUrl = await fetchMoviePoster(movie.title);
-        return { ...movie, poster: posterUrl };
-      })
-    );
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "user",
+            content: `Recommend me movies in json format [{"title": "", "description": ""}] according to this input from user: ${name}. Return only a valid JSON array. Description must be 3 to 4 lines.`,
+          },
+        ],
+        max_tokens: 1000,
+        temperature: 0.5,
+      });
 
-    setArr(moviesWithPosters);
-    setLoader(false);
+      let obj = completion.choices[0].message.content?.trim() ?? "";
+      const jsonMatch = obj.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) obj = jsonMatch[1].trim();
+      object = JSON.parse(obj);
+
+      const moviesWithPosters = await Promise.all(
+        object.map(async (movie) => {
+          const posterUrl = await fetchMoviePoster(movie.title);
+          return { ...movie, poster: posterUrl };
+        })
+      );
+
+      setArr(moviesWithPosters);
+    } catch (err) {
+      console.error("Recommendation error:", err);
+      setError(err?.message || "Something went wrong. Check the console for details.");
+    } finally {
+      setLoader(false);
+    }
   }
 
   return (
@@ -161,6 +177,11 @@ const Input = () => {
             </button>
           </div>
 
+          {error && (
+            <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm text-center">
+              {error}
+            </div>
+          )}
           <p className="mt-3 text-center text-slate-500 text-sm">or try</p>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
             {["Action", "Rom-com", "Sci‑fi", "Horror", "Documentary"].map((suggestion) => (
